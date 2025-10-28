@@ -1,6 +1,7 @@
 package chip8
 import "core:math/rand"
 import "base:runtime"
+import mem "core:mem"
 
 
 get_op_f000 :: proc() -> u8 {
@@ -34,7 +35,7 @@ opcode_execute :: proc() {
   case 0x0: // 0
     switch value := get_op_000f(); value {
     case 0:
-      c8_clear_screen()
+      mem.set(&g_c8_screen, 0, C8_SCREEN_HEIGHT)
       g_draw_flag = true
     case 0xE:
       g_pc = pcstack_get_top()

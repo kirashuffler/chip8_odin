@@ -1,7 +1,9 @@
 package chip8
 import rl "vendor:raylib"
 import "base:runtime"
-import mem "core:mem"
+import fmt "core:fmt"
+import io "core:io"
+import os "core:os"
 
 get_keymap :: proc(key: rune) -> u16 {
   switch key {
@@ -42,27 +44,74 @@ get_keymap :: proc(key: rune) -> u16 {
   }
 }
 
-c8_clear_screen :: proc() {
-  mem.set(&g_c8_screen, 0, MEM_SIZE_BYTES)
-}
-
-c8_init :: proc() -> int {
-	copy_slice(g_mem[:FONTS_CNT], g_fonts[:])
-  //read rom 
-  if len(os.args) != 2 {
+c8_load_rom :: proc(filepath : string) -> int {
+  info, err := os.stat(filepath)
+  if err != os.ERROR_NONE {
+    fmt.eprintf("Failed to access ROM '%s'\n", filepath)
+    return -1
   }
 
+  if info.size > MEM_SIZE_BYTES - MEM_START_OFFSET {
+    fmt.eprintf("Failed to load ROM, its size too big: '%d'\n", info.size)
+    return -1
+  }
+  
+  if info.size == 0 {
+    fmt.eprintln("Failed to load ROM, its empty")
+    return -1
+  }
+  file : os.Handle 
+  file, err = os.open(filepath)
+  if err != os.ERROR_NONE {
+    fmt.eprintf("Failed to open ROM '%s'\n", filepath)
+    return -1
+  }
+  defer os.close(file)
+  
+  rom_buffer := g_mem[MEM_START_OFFSET:MEM_START_OFFSET + int(info.size)]
+  bytes_read : int
+  file_stream := os.stream_from_handle(file)
+  bytes_read, err = io.read(file_stream, rom_buffer)
+  if err != io.Error.None {
+    fmt.eprintfln("Failed to read into rom buffer %v", err)
+    return -1
+  }
+
+  if bytes_read != int(info.size) {
+    fmt.eprintfln("Partial read: %v bytes of %v", bytes_read, int(info.size))
+  }
+
+  fmt.printfln("Loaded ROM: %v size: %v", filepath, bytes_read)
+  return 0
+}
+
+c8_init :: proc(filepath: string) -> int {
+  if c8_load_rom(filepath) != 0 {
+    return -1
+  }
+	copy_slice(g_mem[:FONTS_CNT], g_fonts[:])
+  return 0
 }
 
 c8_cycle :: proc() {
-
+  g_opcode = (u16(g_mem[g_pc + 1]) << 8) & u16(g_mem[g_pc])
+  opcode_execute()
+  g_pc += 2
 }
 
 main :: proc() {
-	c8_init();
+  if len(os.args) != 2 {
+    fmt.println("Failed to launch: expected only 1 argument - path to ROM");
+  }
+
+	if c8_init(os.args[1]) < 0 {
+    return 
+  }
+
 	rl.InitWindow(C8_SCREEN_WIDTH * SCALE, C8_SCREEN_HEIGHT * SCALE, "Chip-8")
 	defer rl.CloseWindow()
 	rl.SetTargetFPS(60)
+
 	for !rl.WindowShouldClose() {
     key := get_keymap(rune(rl.GetCharPressed()))
     if key != INVALID_KEY {
@@ -73,7 +122,14 @@ main :: proc() {
 		rl.BeginDrawing()
 		defer rl.EndDrawing()
 		rl.ClearBackground(rl.BLACK)
-		rl.DrawRectangle(0, 0, SCALE * 1, SCALE * 1, rl.RAYWHITE)
+
+    for val, y in g_c8_screen {
+      for x in 0..<C8_SCREEN_WIDTH {
+        if (1 << u16(x)) & val > 0 {
+          rl.DrawRectangle(i32(x) * SCALE, i32(y) * SCALE, SCALE * 1, SCALE * 1, rl.RAYWHITE)
+        }
+      }
+    }
 
     g_key_pressed = 0
     g_keys &= Number_Set{}
