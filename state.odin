@@ -2,7 +2,7 @@ package chip8
 
 C8_SCREEN_WIDTH :: 64
 C8_SCREEN_HEIGHT :: 32
-SCALE :: 10
+SCALE :: 20
 MEM_SIZE_BYTES :: 4096
 MEM_START_OFFSET :: 0x200
 g_mem : [MEM_SIZE_BYTES]u8
@@ -29,7 +29,6 @@ GP_REGS_QTY :: 16 // general purpose register quantity
 g_gp_regs : [GP_REGS_QTY]u8
 g_opcode: u16
 g_pc: u16 = 0x200
-g_draw_flag := true
 KEY_NOT_PRESSED :: 0xFF
 g_key_pressed : u16 = KEY_NOT_PRESSED
 g_index : u16
@@ -41,3 +40,9 @@ Screen_Row_Set :: bit_set[0..<C8_SCREEN_WIDTH; u64]
 g_keys : Number_Set
 g_delay_timer : u8
 g_sound_timer : u8
+
+LM_ONE :: u64(1 << 63)
+
+STACK_SIZE :: 16
+g_stack : [STACK_SIZE]u16
+g_sp : u16

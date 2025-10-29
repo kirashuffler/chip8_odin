@@ -4,6 +4,7 @@ import "base:runtime"
 import fmt "core:fmt"
 import io "core:io"
 import os "core:os"
+import "core:log"
 
 get_keymap :: proc(key: rune) -> u16 {
   switch key {
@@ -93,13 +94,29 @@ c8_init :: proc(filepath: string) -> int {
   return 0
 }
 
-c8_cycle :: proc() {
-  g_opcode = (u16(g_mem[g_pc + 1]) << 8) & u16(g_mem[g_pc])
+c8_cycle :: proc() -> bool {
+  g_opcode = (u16(g_mem[g_pc]) << 8) | u16(g_mem[g_pc + 1])
+  if g_opcode == 0 {
+    fmt.println("Reached the end of ROM")
+    return false
+  }
   opcode_execute()
   g_pc += 2
+  if g_sound_timer > 0 {
+    fmt.println("BEEP!");
+    g_sound_timer -= 1
+  }
+
+  if g_delay_timer > 0 {
+    g_delay_timer -= 1
+  }
+  return true
 }
 
 main :: proc() {
+  logger := log.create_console_logger()
+  context.logger = logger
+  defer log.destroy_console_logger(logger)
   if len(os.args) != 2 {
     fmt.println("Failed to launch: expected only 1 argument - path to ROM");
   }
@@ -110,22 +127,27 @@ main :: proc() {
 
 	rl.InitWindow(C8_SCREEN_WIDTH * SCALE, C8_SCREEN_HEIGHT * SCALE, "Chip-8")
 	defer rl.CloseWindow()
-	rl.SetTargetFPS(60)
+	rl.SetTargetFPS(10)
 
+  cycle_count : int
 	for !rl.WindowShouldClose() {
+    log.debugf("cycle_count %v", cycle_count)
+    cycle_count += 1
     key := get_keymap(rune(rl.GetCharPressed()))
     if key != INVALID_KEY {
       g_keys |= Number_Set{int(key)}
       g_key_pressed = key
     }
-    c8_cycle()
+    if !c8_cycle() {
+      return
+    }
 		rl.BeginDrawing()
 		defer rl.EndDrawing()
 		rl.ClearBackground(rl.BLACK)
 
     for val, y in g_c8_screen {
       for x in 0..<C8_SCREEN_WIDTH {
-        if (1 << u16(x)) & val > 0 {
+        if (LM_ONE >> u16(x)) & val > 0 {
           rl.DrawRectangle(i32(x) * SCALE, i32(y) * SCALE, SCALE * 1, SCALE * 1, rl.RAYWHITE)
         }
       }
