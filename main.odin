@@ -100,8 +100,8 @@ c8_cycle :: proc() -> bool {
     fmt.println("Reached the end of ROM")
     return false
   }
-  opcode_execute()
   g_pc += 2
+  opcode_execute()
   if g_sound_timer > 0 {
     fmt.println("BEEP!");
     g_sound_timer -= 1
@@ -127,19 +127,22 @@ main :: proc() {
 
 	rl.InitWindow(C8_SCREEN_WIDTH * SCALE, C8_SCREEN_HEIGHT * SCALE, "Chip-8")
 	defer rl.CloseWindow()
-	rl.SetTargetFPS(10)
+	rl.SetTargetFPS(TARGET_FPS)
 
-  cycle_count : int
 	for !rl.WindowShouldClose() {
-    log.debugf("cycle_count %v", cycle_count)
-    cycle_count += 1
-    key := get_keymap(rune(rl.GetCharPressed()))
-    if key != INVALID_KEY {
-      g_keys |= Number_Set{int(key)}
-      g_key_pressed = key
+    cur_keys := Number_Set{}
+    for char := rl.GetCharPressed(); char != 0; {
+      key := get_keymap(rune(char))
+      if key != INVALID_KEY {
+        cur_keys |= Number_Set{int(key)}
+        log.debugf("cur_keys = %v", cur_keys)
+      }
     }
-    if !c8_cycle() {
-      return
+    g_keys = cur_keys
+    for i in 0..<(TARGET_CPU_CLOCK / TARGET_FPS) {
+      if !c8_cycle() {
+        return
+      }
     }
 		rl.BeginDrawing()
 		defer rl.EndDrawing()
@@ -152,9 +155,6 @@ main :: proc() {
         }
       }
     }
-
-    g_key_pressed = 0
-    g_keys &= Number_Set{}
 	}
 
 }

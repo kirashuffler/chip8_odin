@@ -45,4 +45,10 @@ LM_ONE :: u64(1 << 63)
 
 STACK_SIZE :: 16
 g_stack : [STACK_SIZE]u16
-g_sp : u16
+g_sp : i16 = -1
+INCREMENT_PC :: true
+DONT_INCREMENT_PC :: false
+
+TARGET_FPS :: 60
+// TARGET_CPU_CLOCK :: 700
+TARGET_CPU_CLOCK :: 60
