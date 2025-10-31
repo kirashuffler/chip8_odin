@@ -113,12 +113,28 @@ c8_cycle :: proc() -> bool {
   return true
 }
 
+update_keys_state :: proc() {
+  cur_keys := Number_Set{}
+  for char := rl.GetCharPressed(); char != 0; char = rl.GetCharPressed() {
+    key := get_keymap(rune(char))
+    if key != INVALID_KEY {
+      cur_keys |= Number_Set{int(key)}
+    }
+    g_key_is_pressed = true
+  }
+  if card(cur_keys) == 0 {
+    g_key_is_pressed = false
+  }
+  g_keys = cur_keys
+}
+
 main :: proc() {
   logger := log.create_console_logger()
   context.logger = logger
   defer log.destroy_console_logger(logger)
   if len(os.args) != 2 {
     fmt.println("Failed to launch: expected only 1 argument - path to ROM");
+    return
   }
 
 	if c8_init(os.args[1]) < 0 {
@@ -130,24 +146,16 @@ main :: proc() {
 	rl.SetTargetFPS(TARGET_FPS)
 
 	for !rl.WindowShouldClose() {
-    cur_keys := Number_Set{}
-    for char := rl.GetCharPressed(); char != 0; char = rl.GetCharPressed() {
-      key := get_keymap(rune(char))
-      if key != INVALID_KEY {
-        cur_keys |= Number_Set{int(key)}
-        log.debugf("cur_keys = %v", cur_keys)
-      }
-    }
-    g_keys = cur_keys
+    update_keys_state()
     for i in 0..<(TARGET_CPU_CLOCK / TARGET_FPS) {
       if !c8_cycle() {
         return
       }
     }
+
 		rl.BeginDrawing()
 		defer rl.EndDrawing()
 		rl.ClearBackground(rl.BLACK)
-
     for val, y in g_c8_screen {
       for x in 0..<C8_SCREEN_WIDTH {
         if (LM_ONE >> u16(x)) & val > 0 {

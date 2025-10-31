@@ -34,18 +34,18 @@ opcode_execute :: proc() {
   x := get_op_x()
   y := get_op_y()
   switch f000 := get_op_f000(); f000 {
-  case 0x0: // 0
+  case 0x0:
     switch value := get_op_000f(); value {
     case 0:
-      mem.set(&g_c8_screen, 0, C8_SCREEN_HEIGHT)
+      mem.set(&g_c8_screen, 0, C8_SCREEN_HEIGHT * 8)
     case 0xE:
       g_pc = g_stack[g_sp]
       g_sp -= 1
     case:
     }
-  case 1: // 1NNN
+  case 1:
     g_pc = get_op_0fff()
-  case 2: //2NNN
+  case 2:
     g_sp += 1
     g_stack[g_sp] = g_pc
     g_pc = get_op_0fff()
@@ -143,19 +143,19 @@ opcode_execute_f :: proc() {
   case 0x07:
     g_gp_regs[x] = g_delay_timer
   case 0x0A:
-    key_pressed := false
+    if !g_key_is_pressed {
+      log.debugf("FX0A opcode waiting key, g_pc = %X", g_pc)
+      g_pc -= 2
+      return
+    }
     for i in 0..<16 {
       if int(i) in g_keys {
-        key_pressed = true
         g_gp_regs[x] = u8(i) 
-        break
+        log.debugf("0A opcode key_pressed is %v", i)
+        return
       }
     }
-    // if !key_pressed {
-    //   g_pc -= 2
-    // }
 
-    log.debugf("0A opcode key_pressed is %v", key_pressed)
   case 0x15:
     g_delay_timer = g_gp_regs[x]
   case 0x18:

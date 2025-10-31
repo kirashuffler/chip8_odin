@@ -29,8 +29,6 @@ GP_REGS_QTY :: 16 // general purpose register quantity
 g_gp_regs : [GP_REGS_QTY]u8
 g_opcode: u16
 g_pc: u16 = 0x200
-KEY_NOT_PRESSED :: 0xFF
-g_key_pressed : u16 = KEY_NOT_PRESSED
 g_index : u16
 g_c8_screen : [C8_SCREEN_HEIGHT]u64
 INVALID_KEY :: 0xFF
@@ -38,6 +36,7 @@ KEYS_QTY :: 16
 Number_Set :: bit_set[0..<16; u16]
 Screen_Row_Set :: bit_set[0..<C8_SCREEN_WIDTH; u64]
 g_keys : Number_Set
+g_key_is_pressed := false
 g_delay_timer : u8
 g_sound_timer : u8
 
@@ -50,5 +49,5 @@ INCREMENT_PC :: true
 DONT_INCREMENT_PC :: false
 
 TARGET_FPS :: 60
-TARGET_CPU_CLOCK :: 700
+TARGET_CPU_CLOCK :: 1000
 // TARGET_CPU_CLOCK :: 60
