@@ -131,7 +131,7 @@ main :: proc() {
 
 	for !rl.WindowShouldClose() {
     cur_keys := Number_Set{}
-    for char := rl.GetCharPressed(); char != 0; {
+    for char := rl.GetCharPressed(); char != 0; char = rl.GetCharPressed() {
       key := get_keymap(rune(char))
       if key != INVALID_KEY {
         cur_keys |= Number_Set{int(key)}

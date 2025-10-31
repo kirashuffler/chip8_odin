@@ -115,20 +115,25 @@ opcode_execute_8 :: proc() {
   case 3:
     g_gp_regs[x] ~= g_gp_regs[y]
   case 4:
-    g_gp_regs[0xF] = (u16(g_gp_regs[x]) + u16(g_gp_regs[y])) > u16(0xFF) ? 1 : 0
-    g_gp_regs[x] += g_gp_regs[y]
+    sum := u16(g_gp_regs[x]) + u16(g_gp_regs[y])
+    g_gp_regs[x] = u8(sum & 0xFF)
+    g_gp_regs[0xF] = (sum >> 8) > 0 ? 1 : 0
   case 5:
-    g_gp_regs[0xF] = g_gp_regs[x] > g_gp_regs[y] ? 1 : 0
+    carry := g_gp_regs[x] >= g_gp_regs[y]
     g_gp_regs[x] -= g_gp_regs[y]
+    g_gp_regs[0xF] = u8(carry)
   case 6:
-    g_gp_regs[0xF] = g_gp_regs[x] & 0x1
+    carry := g_gp_regs[x] & 0x1
     g_gp_regs[x] >>= 1
+    g_gp_regs[0xF] = carry
   case 7:
-    g_gp_regs[0xF] = g_gp_regs[x] < g_gp_regs[y] ? 1 : 0
+    carry := g_gp_regs[y] >= g_gp_regs[x]
     g_gp_regs[x] = g_gp_regs[y] - g_gp_regs[x]
+    g_gp_regs[0xF] = u8(carry)
   case 0xE:
-    g_gp_regs[0xF] = g_gp_regs[x] & 0x80 > 0 ? 1 : 0
+    carry := (g_gp_regs[x] & 0x80) > 0 ? 1 : 0
     g_gp_regs[x] <<= 1
+    g_gp_regs[0xF] = u8(carry)
   }
 }
 
@@ -146,18 +151,19 @@ opcode_execute_f :: proc() {
         break
       }
     }
-    if !key_pressed {
-      g_pc -= 2
-    }
+    // if !key_pressed {
+    //   g_pc -= 2
+    // }
 
-    log.debugf("0A opcode key_pressed is %v")
+    log.debugf("0A opcode key_pressed is %v", key_pressed)
   case 0x15:
     g_delay_timer = g_gp_regs[x]
   case 0x18:
     g_sound_timer = g_gp_regs[x]
   case 0x1E:
-    g_gp_regs[0xF] = g_index + u16(g_gp_regs[x]) > 0xFFF ? 1 : 0
+    carry := g_index + u16(g_gp_regs[x]) > 0xFFF
     g_index += u16(g_gp_regs[x])
+    g_gp_regs[0xF] = u8(carry)
   case 0x29:
     g_index = u16(g_gp_regs[x]) * 0x5
   case 0x33:
@@ -165,8 +171,8 @@ opcode_execute_f :: proc() {
     g_mem[g_index + 1] = g_gp_regs[x] % 100 / 10
     g_mem[g_index + 2] = g_gp_regs[x] % 10
   case 0x55:
-    copy_slice(g_mem[g_index:g_index + u16(x)], g_gp_regs[:x])
+    copy_slice(g_mem[g_index:g_index + u16(x) + 1], g_gp_regs[:x + 1])
   case 0x65:
-    copy_slice(g_gp_regs[:x], g_mem[g_index:g_index + u16(x)])
+    copy_slice(g_gp_regs[:x + 1], g_mem[g_index:g_index + u16(x) + 1])
   }
 }
