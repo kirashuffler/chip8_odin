@@ -1,4 +1,6 @@
+#+feature dynamic-literals
 package chip8
+import rl "vendor:raylib"
 
 C8_SCREEN_WIDTH :: 64
 C8_SCREEN_HEIGHT :: 32
@@ -25,6 +27,30 @@ g_fonts : [FONTS_CNT]u8 = [FONTS_CNT]u8{
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
     0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 }
+
+g_keymap: map[rl.KeyboardKey]int = {
+  rl.KeyboardKey.X = 0x0,
+
+  rl.KeyboardKey.ONE = 0x1,
+  rl.KeyboardKey.TWO = 0x2,
+  rl.KeyboardKey.THREE = 0x3,
+  rl.KeyboardKey.FOUR = 0xC,
+
+  rl.KeyboardKey.Q = 0x4,
+  rl.KeyboardKey.W = 0x5,
+  rl.KeyboardKey.E = 0x6,
+  rl.KeyboardKey.R = 0xD,
+
+  rl.KeyboardKey.A = 0x7,
+  rl.KeyboardKey.S = 0x8,
+  rl.KeyboardKey.D = 0x9,
+  rl.KeyboardKey.F = 0xE,
+
+  rl.KeyboardKey.Z = 0xA,
+  rl.KeyboardKey.C = 0xB,
+  rl.KeyboardKey.V = 0xF,
+}
+
 GP_REGS_QTY :: 16 // general purpose register quantity
 g_gp_regs : [GP_REGS_QTY]u8
 g_opcode: u16

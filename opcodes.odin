@@ -96,10 +96,16 @@ gfx_conf_sprite :: proc(ix, iy: u8, height: u8) {
   x := g_gp_regs[ix] % C8_SCREEN_WIDTH
   y := g_gp_regs[iy] % C8_SCREEN_HEIGHT
   sprite_bytes := g_mem[u16(g_index):u16(g_index) + u16(height)]
-  screen_slice := g_c8_screen[u16(y):u16(y) + u16(len(sprite_bytes))]
-  for sprite_byte, row in sprite_bytes {
-    screen_slice[row] ~= u64(sprite_byte) << u16(56 - x)
-  }
+  top := u16(y)
+  bottom := u16(y) + u16(len(sprite_bytes))
+  // if bottom < 32 {
+    screen_slice := g_c8_screen[u16(y):(u16(y) + u16(len(sprite_bytes)))]
+    for sprite_byte, row in sprite_bytes {
+      screen_slice[row] ~= u64(sprite_byte) << u16(56 - x)
+    }
+  // } else {
+  //
+  // }
 }
 
 opcode_execute_8 :: proc() {
@@ -144,7 +150,7 @@ opcode_execute_f :: proc() {
     g_gp_regs[x] = g_delay_timer
   case 0x0A:
     if !g_key_is_pressed {
-      log.debugf("FX0A opcode waiting key, g_pc = %X", g_pc)
+      log.debugf("FX0A opcode waiting key, g_pc = %X, g_keys = %v", g_pc, g_keys)
       g_pc -= 2
       return
     }
